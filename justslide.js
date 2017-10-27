@@ -53,7 +53,7 @@
     var self = this,
       $slides = self.$ref.children(),
       $slider = $("<div></div>")
-        .addClass("slides-container")
+        .addClass("slides-container " + "slider-" + self.instance)
         .append($slides)
         .appendTo(self.$ref);
     self.$ref.addClass("slide-init-" + self.instance);
