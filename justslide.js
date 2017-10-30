@@ -16,23 +16,18 @@
         transition: 400
       };
       //check if element param is $ object
-      ///console.log('element',element);
       var el = element instanceof $.fn.init ? element : $(element);
-      ///console.log('el',el.children)
-      //add default settings
 
-      //overwrite existing settings and add new ones
+      //overwrite default, add new settings and save to .options
       if ($.type(settings) === "object") $.extend(self.options, settings);
 
       //track element
       self.$ref = el;
-      ///console.log(self.$ref.children);
       //track slide instance
       self.instance = instance++;
       //start reformatting content
       self.start();
     }
-    //console.log(slide)
     return slide;
   })();
 
@@ -43,14 +38,19 @@
     if (self.options.slidesToShow >= self.$ref.children().length) {
       self.centerAll(); //TD
     } else {
-      self.setHTML();
+      self.setHTML(self.options.infinite);
       self.setCSS();
       self.addBehavior();
     }
   };
 
-  Slide.prototype.setHTML = function() {
+  Slide.prototype.setHTML = function(infinite) {
     var self = this,
+        options = self.options,
+        infinite = options.infinite,
+        centered = options.centered,
+        slidesToShow = options.slidesToShow,
+        slidesToScroll = options.slideToScroll,
       $slides = self.$ref.children(),
       $slider = $("<div></div>")
         .addClass("slides-container " + "slider-" + self.instance)
@@ -65,6 +65,9 @@
     $slides.each(function(i, elem) {
       $(elem).attr("data-index", i);
     });
+    //reformat for infinite scrolling
+    if (infinite) {
+    }
     //add arrows if selected
     self.setArrows(self.options.arrows);
   };
@@ -76,7 +79,7 @@
       slidesW,
       slidesH;
     //apply slide height to children
-    sliderH = slidesH = self.$ref.height();
+    sliderH = slidesH = self.getSlideHeight();
     ///console.log(sliderH)
     //calc slides width
     slidesW = self.getSlideWidth(self.options.fullSize);
@@ -95,7 +98,7 @@
       width: sliderW,
       height: sliderH,
       background: "pink", //mock
-      transform: 'translateX(0)',
+      transform: "translateX(0)"
     });
     self.$slides.css({
       height: slidesH,
@@ -112,7 +115,7 @@
       background: "blue", //mock
       transform: "translateY(-50%)",
       top: "50%",
-      'z-index': 10,
+      "z-index": 10
     });
     self.$arrows.eq(0).css({
       left: 0
@@ -123,9 +126,10 @@
 
     //generate slides offsets
     self.$slides.each(function(i, elem) {
+      //map where the slider should translate to set the slide into view
       $(elem)
-        .attr("data-offsetx", $(this).position().left)
-        .attr("data-offsety", $(this).position().top);
+        .attr("data-offsetx", -$(this).position().left)
+        .attr("data-offsety", -$(this).position().top);
     });
   };
 
@@ -134,11 +138,16 @@
     ///console.log(self.options)
     if (full) {
       //return height of content
-      return self.$ref.height();
+      ////return self.$ref.height();
     } else {
       return self.$ref.width() / self.options.slidesToShow;
     }
   };
+  
+  Slide.prototype.getSlideHeight = function() {
+    var self = this;
+    return self.$ref.height()
+  }
 
   Slide.prototype.setArrows = function(init) {
     if (!init) return;
@@ -160,16 +169,14 @@
     //set the first slide as current
     var current = (self.$currentSlide = $(self.$slides[0]));
     current.addClass("current-slide");
-    
+
     var arrows = {};
 
-      arrows.prev = $(self.$arrows[0]),
-      arrows.next = $(self.$arrows[1]);
+    arrows.prev = $(self.$arrows[0]);
+    arrows.next = $(self.$arrows[1]);
 
-    console.log(self.$slides);
+    //console.log(self.$slides);
     var edge = self.addCustomEvent("edge");
-    
-    
 
     arrows.prev.on("click", changeSlide("prev")).on("edge", function() {
       console.log("reached start");
@@ -179,22 +186,28 @@
     });
     ///console.log(prev, next)
 
-    //helper func
+    //helper functions
     function changeSlide(direction) {
+      //return a handler based on direction - no need to write the handler twice
       return function() {
+        //set local variables
         var slides = self.$slides,
           currentSlide = self.$currentSlide,
           currentIndex = +currentSlide.attr("data-index"),
           noOfSlides = self.$slides.length;
 
-        updateCurrent(direction); //TD
+        updateCurrent(direction);
+
         function updateCurrent(direction) {
           var dir = direction === "prev" ? -1 : 1;
           //console.log("dir ", dir);
+
           if (currentIndex + dir < 0) {
             arrows.prev.trigger(edge);
+            goToOffset(currentSlide, dir);
           } else if (currentIndex + dir === noOfSlides) {
             arrows.next.trigger(edge);
+            goToOffset(currentSlide, dir);
           } else {
             console.log("curr index ", currentIndex);
             currentSlide.removeClass("current-slide");
@@ -206,32 +219,73 @@
             goToOffset(currentSlide); //TD
           }
         }
-        function goToOffset(elem) {
-          console.log(arrows[direction])
-          arrows[direction].off('click');
-          var goTo = elem.attr("data-offsetx");
-          var transition = self.options.transition;
-          self.$slider.css('transition','transform '+ transition + 'ms ease-in-out')
-              .css('transform', 'translatex(' + - goTo + 'px)');
-          setTimeout(function() { self.$slider.css('transition','none')
-                                  arrows[direction].on('click', changeSlide(direction))
-                                }, transition)
+        function goToOffset(elem, dir) {
+          //cannot animate transform as other properties: add transition, set transform, remove transition
+          //transitions are expressed in negative values as goTo values are mapped as distances
+          //
+          //unbind click event to prevent multiple click events
+          arrows[direction].off("click");
+          var goTo,
+            transition = self.options.transition,
+             initialPosition;
+          //check if edge reached - dir = -1 || 1 
+          if (dir) {
+            if (dir < 0) {
+              //translate slider to the right
+              initialPosition = +elem.attr("data-offsetx");
+              goTo = initialPosition + 15;
+            }
+            else {
+              //translate slider to the left
+              initialPosition = +elem.attr("data-offsetX");
+              goTo = initialPosition - 15;
+            }
             
+            self.$slider
+              .css(
+              //add transition prop with 1/2 transition time (the other 1/2 for returning to initialPosition)
+                "transition",
+                "transform " + (transition + 100)/2 + "ms ease-in-out"
+              )
+              //add transform 
+              .css("transform", "translatex(" + goTo + "px)")
+            //set slide back timeout on 1/2 transition time
+            var slideBack = setTimeout(function() {
+              self.$slider.css("transform", "translatex(" + initialPosition + "px)");
+                       }, (transition + 100)/2);
+            //set remove transition to full transition time
+            var removeTransition = setTimeout(function() {
+              self.$slider.css("transition", "none");
+              arrows[direction].on("click", changeSlide(direction));
+            }, transition+100)
+
+   
+          } else {
+            //principles from above apply, without needing to halve transition time
+            goTo = elem.attr("data-offsetx");
+            self.$slider
+              .css("transition", "transform " + transition + "ms ease-in-out")
+              .css("transform", "translatex(" + goTo + "px)");
+            var slide = setTimeout(function() {
+              self.$slider.css("transition", "none");
+              arrows[direction].on("click", changeSlide(direction));
+            }, transition);
+          }
         }
       };
     }
   };
 
   Slide.prototype.addCustomEvent = function(type) {
+    //return new event object 
     return $.Event(type);
   };
 
   $.fn.slide = function(settings) {
     var self = this;
     self.each(function(i, elem) {
-      if ($.type(elem) === "undefined") return;
-      elem.slide = new Slide($(elem), settings);
-      ///console.dir(elem)
+      if ($.type(elem) !== "undefined")
+        elem.slide = new Slide($(elem), settings);
     });
   };
 
