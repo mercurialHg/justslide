@@ -194,12 +194,13 @@
         var slides = self.$slides,
           currentSlide = self.$currentSlide, //first slide into view
           currentIndex = +currentSlide.attr("data-index"),
-          noOfSlides = self.$slides.length;
+          noOfSlides = self.$slides.length, 
+          slidesToScroll = self.options.slidesToScroll;
 
         updateCurrent(direction);
 
         function updateCurrent(direction) {
-          var dir = direction === "prev" ? -1 : 1;
+          var dir = direction === "prev" ? -slidesToScroll: slidesToScroll;
           //console.log("dir ", dir);
 
           if (currentIndex + dir < 0) {
