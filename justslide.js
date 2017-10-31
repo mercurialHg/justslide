@@ -215,7 +215,7 @@
           } else if (currentIndex === edges.max && dir > 0) {
             arrows[direction].trigger(edge);
             goToOffset(currentSlide, dir);
-          } else if (!slides[currentIndex+slidesToScroll+1] && dir > 0) {
+          } else if (!slides[currentIndex+slidesToScroll+remainder] && dir > 0) {
             console.log('need to use remainder to go right');
             currentSlide.removeClass('current-slide');
             //set next slide
