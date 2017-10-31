@@ -211,23 +211,23 @@
           //define edge behavior - 
           if (currentIndex === edges.min && dir < 0)  {
             arrows[direction].trigger(edge)
-            goToOffset(currentSlide, dir);
+            moveView(currentSlide, dir);
           } else if (currentIndex === edges.max && dir > 0) {
             arrows[direction].trigger(edge);
-            goToOffset(currentSlide, dir);
+            moveView(currentSlide, dir);
           } else if (!slides[currentIndex+slidesToScroll+remainder] && dir > 0) {
             console.log('need to use remainder to go right');
             currentSlide.removeClass('current-slide');
             //set next slide
             currentSlide = self.$currentSlide = slides.eq(currentIndex+remainder);
             //go to next slide
-            goToOffset(currentSlide, remainder);
+            moveView(currentSlide, remainder);
           } else if (!slides[currentIndex-slidesToScroll] && dir < 0) {
             console.log('need to use remainder to go left');
             //set next slide
             currentSlide = self.$currentSlide = slides.eq(currentIndex-remainder);
             //go to next slide
-            goToOffset(currentSlide, -remainder);
+            moveView(currentSlide, -remainder);
           } else {
             console.log("curr index ", currentIndex);
             currentSlide.removeClass("current-slide");
@@ -236,10 +236,10 @@
               slides.eq(currentIndex + dir)
             ).addClass("current-slide");
             console.log(self.$currentSlide);
-            goToOffset(currentSlide); //TD
+            moveView(currentSlide); //TD
           }
         }
-        function goToOffset(elem, dir) {
+        function moveView(elem, dir) {
           //cannot animate transform as other properties: add transition, set transform, remove transition
 
           //transitions are expressed in negative values as goTo values are mapped as distances
