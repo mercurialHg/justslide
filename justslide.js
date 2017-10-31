@@ -192,7 +192,7 @@
       return function() {
         //set local variables
         var slides = self.$slides,
-          currentSlide = self.$currentSlide,
+          currentSlide = self.$currentSlide, //first slide into view
           currentIndex = +currentSlide.attr("data-index"),
           noOfSlides = self.$slides.length;
 
