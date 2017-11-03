@@ -2,14 +2,14 @@
   //CONSTRUCTOR
   var Slide = (function() {
     var instance = 0;
-    function slide(element, settings) {
+    function slide(element, settings) {  
       var self = this;
       //set defaults
       self.options = {
         infinite: true,
         centered: false,
         //slidesToShow: 1,
-        slidesToScroll: 2,
+        slidesToScroll: 11,
         fullSize: false,
         arrows: true,
         fadeIn: true,
@@ -154,6 +154,9 @@
         .attr("data-offsetx", -$(this).position().left)
         .attr("data-offsety", -$(this).position().top);
     });
+    
+    //mock 
+    self.$slides.filter('.clone').css('background-color', '#bada55')
   };
 
   Slide.prototype.getSlideWidth = function() {
@@ -222,8 +225,9 @@
         transition = self.options.transition,
         edges = {
           min: infinite ? slidesToScroll : 0, //index of first element in first view
-          max: infinite ? noOfSlides - 2 - slidesToScroll : noOfSlides - 2 //index of first elem in last view
+          max: noOfSlides - (infinite ? slidesToScroll : 0) - slidesToScroll //index of first elem in last view
         };
+      console.log(edges)
 
       return function() {
         var current = self.$currentSlide, //first slide into view
@@ -264,12 +268,13 @@
               dir > 0)
           ) {
             current.removeClass("current-slide");
-            currentIndex += remainder;
+            currentIndex +=  remainder;
             current = self.$currentSlide = slides
               .eq(currentIndex)
               .addClass("current-slide");
             moveViewTo(currentIndex);
-            console.log("go next + remainder");
+            console.log("go next + remainder", edge.max);
+ 
           } else if (
             (currentIndex - slidesToScroll < 0 && dir < 0) ||
             (slides.eq(currentIndex - slidesToScroll).hasClass("clone") &&
@@ -399,3 +404,4 @@
 
   //var mockups = {};
 })(jQuery);
+
